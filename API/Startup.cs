@@ -18,7 +18,7 @@ namespace API
 {
     public class Startup
     {
-        private readonly IConfiguration _config ;
+        private readonly IConfiguration _config;
         public Startup(IConfiguration config)
         {
             _config = config;
@@ -33,8 +33,13 @@ namespace API
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
             });
-            services.AddDbContext<DataContext>(options => {
-             options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
+            services.AddDbContext<DataContext>(options =>
+            {
+                options.UseSqlite(_config.GetConnectionString("DefaultConnection"));
+            });
+            services.AddCors(c =>
+            {
+                c.AddPolicy("AllowOrigin", options => options.AllowAnyOrigin());
             });
         }
 
@@ -51,6 +56,7 @@ namespace API
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors(options => options.AllowAnyOrigin());
 
             app.UseAuthorization();
 
