@@ -37,7 +37,7 @@ namespace API.Controllers
 
         }
 
-        [HttpGet("{userName}")]
+        [HttpGet("{userName}",Name ="GetUser")]
         public async Task<ActionResult<MemberDTO>> GetUserByUserName(string userName)
         {
             return await _repo.GetMemberAsync(userName);
@@ -46,8 +46,10 @@ namespace API.Controllers
         [HttpPut]
         public async Task<ActionResult> UpdateUser(MemberUpdateDTO memberUpdateDTO)
         {
-            AppUser user = await _repo.GetUserByNameAsync(User.GetUserName());
+            AppUser user  = await _repo.GetUserByNameAsync(User.GetUserName());
+           // = _mapper.Map<AppUser>(member);
             _mapper.Map(memberUpdateDTO, user);
+
             _repo.Update(user);
             if (await _repo.SaveAllAsync())
             {
@@ -57,24 +59,27 @@ namespace API.Controllers
         }
 
         [HttpPost("add-photo")]
-        public async Task<ActionResult<PhotoDTO>> AddPhoto(IFormFile file){
-            var user = await _repo.GetUserByNameAsync(User.GetUserName());
+        public async Task<ActionResult<PhotoDTO>> AddPhoto(IFormFile file)
+        {
+            AppUser user = await _repo.GetUserByNameAsync(User.GetUserName());
+
             var result = await _photoService.AddPhotoAsync(file);
-            if(result.Error != null) return BadRequest(result.Error.Message);
+            if (result.Error != null) return BadRequest(result.Error.Message);
 
             var photo = new Photo
             {
                 Url = result.SecureUrl.AbsoluteUri,
                 PublicId = result.PublicId
             };
-            if(user.Photos.Count == 0)
+            if (user.Photos.Count == 0)
             {
                 photo.IsMain = true;
             }
             user.Photos.Add(photo);
-            if(await _repo.SaveAllAsync())
-            return _mapper.Map<PhotoDTO>(photo);
-
+            if (await _repo.SaveAllAsync())
+            {
+                return CreatedAtRoute("GetUser",new {userName = user.UserName},_mapper.Map<PhotoDTO>(photo));
+            }
             return BadRequest("Problem adding photo");
         }
     }
